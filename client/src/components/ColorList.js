@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosWithAuth from '../utils/axiosWithAuth'
 
 const initialColor = {
   color: "",
@@ -7,7 +7,7 @@ const initialColor = {
 };
 
 const ColorList = ({ colors, updateColors }) => {
-  console.log(colors);
+  // console.log(colors);
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
 
@@ -16,16 +16,67 @@ const ColorList = ({ colors, updateColors }) => {
     setColorToEdit(color);
   };
 
+  /*************************************GET COLOR */
+  const upDataColor = () => {
+    axiosWithAuth()
+    .get('/colors')
+    .then(res => updateColors(res.data))
+    .catch(err => console.log(err));
+  }
+
+  //*******************************************PUT COLOR */
   const saveEdit = e => {
+    // console.log(colorToEdit.id)
     e.preventDefault();
-    // Make a put request to save your updated color
-    // think about where will you get the id from...
-    // where is is saved right now?
+    axiosWithAuth()
+    .put(`/colors/${colorToEdit.id}`, colorToEdit)
+    .then(upDataColor())
+    .then(setEditing(false))
+    .catch(err => console.log(err))
   };
 
+  /*************************************DELETE COLOR */
   const deleteColor = color => {
     // make a delete request to delete this color
+    axiosWithAuth()
+    .delete(`/colors/${color.id}`)
+    .then(res => {
+      updateColors(colors.filter(col => col.id !== color.id))
+    })
+    .catch(err => console.log(err))
   };
+
+  /********************************************POST COLOR */
+
+  const [colorInfo, setColorInfo] = useState({
+    color: '',
+    code: '',
+    id: Date.now()
+  })
+
+  const handleChange = e => {
+    setColorInfo({
+      ...colorInfo,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleSubmit = e =>{
+    e.preventDefault();
+    console.log(colorInfo)
+    axiosWithAuth()
+    .post('/colors', colorInfo)
+    .then(upDataColor())
+    .catch(err => console.log(err))
+
+    setColorInfo({
+      color: '',
+      code: ''
+    })
+  }
+
+
+
 
   return (
     <div className="colors-wrap">
@@ -82,6 +133,26 @@ const ColorList = ({ colors, updateColors }) => {
       )}
       <div className="spacer" />
       {/* stretch - build another form here to add a color */}
+        <form onSubmit={handleSubmit}>
+              
+          <input 
+            type='text'
+            placeholder='Color Name'
+            name='color' 
+            onChange={handleChange}
+            value={colorInfo.color}
+          />
+          <input 
+            type='text'
+            placeholder='Hex code '
+            name='code'
+            onChange={handleChange}
+            value={colorInfo.code}
+          />
+          
+          <button type='submit'>Add Color</button>
+        </form>
+
     </div>
   );
 };
